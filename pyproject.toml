@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "p3news"
+version = "0.1.0"
+description = "Honza Javorek's personal F1 news feed"
+authors = ["Honza Javorek <mail@honzajavorek.cz>"]
+license = "AGPL-3.0-only"
+readme = "README.md"
+
+[tool.poetry.scripts]
+p3news = "p3news.__main__:main"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+click = "^8.1.7"
+feedparser = "^6.0.11"
+httpx = "^0.27.2"
+praw = "^7.8.1"
+beautifulsoup4 = "^4.12.3"
+feedgen = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
