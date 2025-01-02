@@ -62,6 +62,10 @@ def main(
     feed = FeedGenerator()
     feed.id(feed_id)
     feed.title("P3news")
+    feed.author(name="Honza Javorek", email="mail@honzajavorek.cz")
+    feed.link(href="https://github.com/honzajavorek/p3news", rel="alternate")
+    feed.logo("https://www.praha3.cz/getFile/id:1185227/praha-3-A-02_RGB.png")
+    feed.language("cs")
     for article in articles:
         entry = feed.add_entry()
         entry.id(article["url"])
@@ -70,6 +74,7 @@ def main(
         entry.description(article["lead"])
         entry.published(article["published_at"])
         entry.enclosure(article["image"])
+        entry.category([{"label": tag, "term": tag} for tag in article["tags"]])
 
     click.echo(f"Writing feed to {output_path}")
     Path(output_path).write_bytes(feed.atom_str())
