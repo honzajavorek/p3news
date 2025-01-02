@@ -19,6 +19,7 @@ import httpx
     help="URL of the news",
 )
 @click.option("-p", "--pages", default=5, type=int, help="Number of pages to fetch")
+@click.option("-w", "--wait", default=1, type=float, help="Wait time between requests")
 @click.option(
     "-o",
     "--output",
@@ -34,6 +35,7 @@ import httpx
 def main(
     url_template: str,
     pages: int,
+    wait: float,
     output_path: Path,
     user_agent: str,
     feed_id: str,
@@ -44,7 +46,7 @@ def main(
     articles = []
     for n in range(1, pages + 1):
         if n > 1:
-            time.sleep(1)
+            time.sleep(wait)
         url = url_template.format(n=n)
         click.echo(f"Fetching news page {url}")
         response = httpx.get(
