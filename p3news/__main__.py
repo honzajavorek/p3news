@@ -2,13 +2,16 @@ from datetime import date, datetime
 from operator import itemgetter
 from pathlib import Path
 import time
+from typing import cast
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 import click
 from bs4 import BeautifulSoup, Tag
 from feedgen.feed import FeedGenerator
-
 import httpx
+from mastodon import Mastodon
+from diskcache import Cache
+from slugify import slugify
 
 
 @click.command()
@@ -28,6 +31,13 @@ import httpx
     type=click.Path(path_type=Path, dir_okay=False),
     help="Output file path for the feed",
 )
+@click.option("-l", "--limit", default=1, type=float, help="How many articles to post")
+@click.option(
+    "--server-url", default="https://mastodonczech.cz/", help="Mastodon server URL"
+)
+@click.option(
+    "--access-token", envvar="MASTODON_ACCESS_TOKEN", help="Mastodon access token"
+)
 @click.option(
     "--user-agent", default="P3news (+https://github.com/honzajavorek/p3news/)"
 )
@@ -37,31 +47,40 @@ def main(
     pages: int,
     wait: float,
     output_path: Path,
+    limit: int,
+    server_url: str,
+    access_token: str,
     user_agent: str,
     feed_id: str,
 ):
+    cache = Cache(".cache")
+
     click.echo("Initializing file system")
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
+    click.echo("Fetching news")
     articles = []
     for n in range(1, pages + 1):
-        if n > 1:
-            time.sleep(wait)
         url = url_template.format(n=n)
-        click.echo(f"Fetching news page {url}")
-        response = httpx.get(
-            url,
-            follow_redirects=True,
-            headers={
-                "User-Agent": user_agent,
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8",
-            },
-            verify=False,
-        )
-        response.raise_for_status()
+        if response := cache.get(url):
+            click.echo(f"Using cached response for {url}")
+            response = cast(httpx.Response, response)
+        else:
+            click.echo(f"Fetching news page {url}")
+            response = download(url, user_agent, wait if n > 1 else None)
+            cache.set(url, response, expire=60 * 60)
         click.echo("Parsing news page")
         articles.extend(parse_page(response))
     articles.sort(key=itemgetter("published_at"), reverse=True)
+
+    click.echo("Fetching images")
+    for article in articles:
+        if response := cache.get(article["image_url"]):
+            click.echo(f"Using cached response for {article['image_url']}")
+        else:
+            click.echo(f"Fetching image {article['image_url']}")
+            response = download(article["image_url"], user_agent, wait)
+            cache.set(article["image_url"], response, expire=60 * 60 * 24 * 30)
 
     click.echo("Generating feed")
     feed = FeedGenerator()
@@ -77,11 +96,71 @@ def main(
         entry.link(href=article["url"])
         entry.description(article["lead"])
         entry.published(article["published_at"])
-        # entry.enclosure(article["image"], 0, "image/jpeg")  doesn't work
-        entry.category([{"label": tag, "term": tag} for tag in article["tags"]])
+        image_response = cast(httpx.Response, cache.get(article["image_url"]))
+        entry.enclosure(
+            article["image_url"],
+            image_response.headers["Content-Length"],
+            image_response.headers["Content-Type"],
+        )
+        entry.category(
+            [{"label": tag, "term": slugify(tag)} for tag in article["tags"]]
+        )
 
     click.echo(f"Writing feed to {output_path}")
     Path(output_path).write_bytes(feed.atom_str())
+
+    click.echo("Connecting to Mastodon")
+    client = Mastodon(
+        api_base_url=server_url, user_agent=user_agent, access_token=access_token
+    )
+    account_id = client.me()["id"]
+
+    click.echo("Figuring out which articles to post")
+    posted_urls = set()
+    for status in client.account_statuses(account_id, limit=100):
+        if status["account"]["id"] == account_id:
+            status_soup = BeautifulSoup(status["content"], "html.parser")
+            posted_urls.update(
+                [
+                    a.get("href")
+                    for a in status_soup.select("a")
+                    if not a.get("href").startswith(server_url)
+                ]
+            )
+
+    click.echo("Posting articles")
+    articles = sorted(
+        [article for article in articles if article["url"] not in posted_urls],
+        key=itemgetter("published_at"),
+    )
+    for i, article in enumerate(articles):
+        if i >= limit:
+            break
+        image_response = cast(httpx.Response, cache.get(article["image_url"]))
+        media = client.media_post(
+            image_response.content, image_response.headers["Content-Type"]
+        )
+        tags = ["#" + slugify(tag, separator="") for tag in article["tags"]]
+        text = f"{article['title']} — {article['url']}\n\n{' '.join(tags)} #praha3 #zizkov #zpravy"
+        client.status_post(
+            text, language="cs", visibility="public", media_ids=[media["id"]]
+        )
+
+
+def download(url: str, user_agent: str, wait: float | None) -> httpx.Response:
+    if wait:
+        time.sleep(wait)
+    response = httpx.get(
+        url,
+        follow_redirects=True,
+        headers={
+            "User-Agent": user_agent,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8",
+        },
+        verify=False,
+    )
+    response.raise_for_status()
+    return response
 
 
 def parse_page(response: httpx.Response) -> list[dict[str, str | date | list[str]]]:
@@ -100,7 +179,7 @@ def parse_article(item: Tag, base_url: str) -> dict[str, str | date | list[str]]
     return {
         "title": item.select_one(".item-text h3").text.strip(),
         "lead": item.select_one(".item-text p").text.strip(),
-        "image": urljoin(base_url, img_url),
+        "image_url": urljoin(base_url, img_url),
         "url": urljoin(base_url, item.select_one(".item-link").get("href")),
         "tags": [tag.text for tag in item.select(".item-tags .tag")],
         "published_at": dt,
