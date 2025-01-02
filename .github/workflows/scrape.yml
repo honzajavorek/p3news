@@ -45,9 +45,8 @@ jobs:
     #     run: poetry run ruff check
 
       - name: Run P3news
-        # env:
-        #   SOMETHING_ID: ${{ secrets.SOMETHING_ID }}
-        #   SOMETHING_CLIENT_SECRET: ${{ secrets.SOMETHING_CLIENT_SECRET }}
+        env:
+          MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
         run: poetry run p3news -o site/p3news.xml
 
       - name: Setup Pages
