@@ -1,6 +1,7 @@
 from datetime import date, datetime
 from operator import itemgetter
 from pathlib import Path
+import time
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 import click
@@ -42,6 +43,8 @@ def main(
 
     articles = []
     for n in range(1, pages + 1):
+        if n > 1:
+            time.sleep(1)
         url = url_template.format(n=n)
         click.echo(f"Fetching news page {url}")
         response = httpx.get(
