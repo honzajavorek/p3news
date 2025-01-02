@@ -11,9 +11,9 @@ p3news = "p3news.__main__:main"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-click = "^8.1.7"
+click = "^8.1.8"
 feedparser = "^6.0.11"
-httpx = "^0.27.2"
+httpx = "^0.28.1"
 praw = "^7.8.1"
 beautifulsoup4 = "^4.12.3"
 feedgen = "^1.0.0"
