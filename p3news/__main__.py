@@ -77,7 +77,7 @@ def main(
         entry.link(href=article["url"])
         entry.description(article["lead"])
         entry.published(article["published_at"])
-        entry.enclosure(article["image"], 0, "image/jpeg")
+        # entry.enclosure(article["image"], 0, "image/jpeg")  doesn't work
         entry.category([{"label": tag, "term": tag} for tag in article["tags"]])
 
     click.echo(f"Writing feed to {output_path}")
