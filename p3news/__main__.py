@@ -42,6 +42,9 @@ from slugify import slugify
     "--user-agent", default="P3news (+https://github.com/honzajavorek/p3news/)"
 )
 @click.option("--feed-id", default="bvRcCoa!d_UeE4WBeZLcG6qnB*!9xP")
+@click.option(
+    "--today", default=lambda: datetime.today().isoformat(), type=datetime.fromisoformat
+)
 def main(
     url_template: str,
     pages: int,
@@ -52,6 +55,7 @@ def main(
     access_token: str,
     user_agent: str,
     feed_id: str,
+    today: datetime,
 ):
     cache = Cache(".cache")
 
@@ -70,7 +74,7 @@ def main(
             response = download(url, user_agent, wait if n > 1 else None)
             cache.set(url, response, expire=60 * 60)
         click.echo("Parsing news page")
-        articles.extend(parse_page(response))
+        articles.extend(parse_page(response, today))
     articles.sort(key=itemgetter("published_at"), reverse=True)
 
     click.echo("Fetching images")
@@ -163,14 +167,24 @@ def download(url: str, user_agent: str, wait: float | None) -> httpx.Response:
     return response
 
 
-def parse_page(response: httpx.Response) -> list[dict[str, str | date | list[str]]]:
+def parse_page(
+    response: httpx.Response, today: datetime
+) -> list[dict[str, str | date | list[str]]]:
     base_url = str(response.url)
     soup = BeautifulSoup(response.content, "html.parser")
-    return [parse_article(item, base_url) for item in soup.select(".news-list-item")]
+    return [
+        parse_article(item, base_url, today) for item in soup.select(".news-list-item")
+    ]
 
 
-def parse_article(item: Tag, base_url: str) -> dict[str, str | date | list[str]]:
-    dt = datetime.strptime(item.select_one(".date").text.strip(), "%d. %m. %Y")
+def parse_article(
+    item: Tag, base_url: str, today: datetime
+) -> dict[str, str | date | list[str]]:
+    dt_text = item.select_one(".date").text.strip()
+    if dt_text.lower() == "dnes":
+        dt = today
+    else:
+        dt = datetime.strptime(dt_text, "%d. %m. %Y")
     dt = dt.replace(tzinfo=ZoneInfo("Europe/Prague"))
 
     img = item.select_one(".item-image img")
