@@ -18,6 +18,7 @@ feedgen = "^1.0.0"
 mastodon-py = "^2.0.0"
 diskcache = "^5.6.3"
 python-slugify = "^8.0.4"
+stamina = "^24.3.0"
 
 [build-system]
 requires = ["poetry-core"]

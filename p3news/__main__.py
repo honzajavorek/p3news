@@ -12,6 +12,7 @@ import httpx
 from mastodon import Mastodon
 from diskcache import Cache
 from slugify import slugify
+import stamina
 
 
 @click.command()
@@ -151,6 +152,7 @@ def main(
         )
 
 
+@stamina.retry(on=httpx.HTTPError, attempts=3)
 def download(url: str, user_agent: str, wait: float | None) -> httpx.Response:
     if wait:
         time.sleep(wait)
