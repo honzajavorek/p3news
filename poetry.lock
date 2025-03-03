@@ -468,13 +468,13 @@ source = ["Cython (>=3.0.11)"]
 
 [[package]]
 name = "mastodon-py"
-version = "2.0.0"
+version = "2.0.1"
 description = "Python wrapper for the Mastodon API"
 optional = false
 python-versions = "*"
 files = [
-    {file = "Mastodon.py-2.0.0-py3-none-any.whl", hash = "sha256:b2f08ffc19bf93db2cd2b7f11d785e847cd09d20127004de1aa089d20d402478"},
-    {file = "mastodon_py-2.0.0.tar.gz", hash = "sha256:34f45aee283bda437f16d512d9a5c7f2cf39b427bff7282ac0a82339d65ed8c7"},
+    {file = "mastodon_py-2.0.1-py3-none-any.whl", hash = "sha256:5bb543ecbd7526bd50675d5d617ec04caa6b10d4002454cbf5641ad612723455"},
+    {file = "mastodon_py-2.0.1.tar.gz", hash = "sha256:f0a9cf59071347c7ff2ee49487d2520ca661f349f369b68845bdf3e43db1fff3"},
 ]
 
 [package.dependencies]
@@ -677,4 +677,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "55d9639e6ca780bbce99062c00e5f1bc619569579223639b007809d1802fba92"
+content-hash = "15a1cfff891e2e53bb86ca488af581fcde93d04423c053cefa4d82b0b3f6a011"
