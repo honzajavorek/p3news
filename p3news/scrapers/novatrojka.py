@@ -20,7 +20,10 @@ async def main() -> None:
                 "lead": content_soup.select_one("p").get_text(" ", strip=True),
                 "url": str(entry.link),
                 "tags": ["Nová Trojka", "rodina"],
-                "published_at": datetime(*entry.published_parsed[:6], tzinfo=UTC).isoformat(),
+                "published_at": datetime(
+                    *entry.published_parsed[:6], tzinfo=UTC
+                ).isoformat(),
+                "lang": "cs",
             }
             await context.add_requests([Request.from_url(str(entry.link), label="article", user_data=data)])
 

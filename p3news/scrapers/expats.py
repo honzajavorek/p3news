@@ -19,15 +19,23 @@ async def main() -> None:
         dt = datetime.strptime(dt_text, "Published on %d.%m.%Y %H:%M:%S")
         dt = dt.replace(tzinfo=ZoneInfo("Europe/Prague"))
 
-        await context.push_data({
-            "title": context.soup.select_one(".title h1").text.strip(),
-            "author": context.soup.select_one(".about .written-by a").text.strip(),
-            "lead": context.soup.select_one(".title h3").text.strip(),
-            "image_url": urljoin(context.request.url, context.soup.select_one(".featured-image img")["src"]),
-            "url": context.request.url,
-            "tags": [tag.text.strip() for tag in context.soup.select(".categories a")],
-            "published_at": dt.isoformat(),
-        })
+        await context.push_data(
+            {
+                "title": context.soup.select_one(".title h1").text.strip(),
+                "author": context.soup.select_one(".about .written-by a").text.strip(),
+                "lead": context.soup.select_one(".title h3").text.strip(),
+                "image_url": urljoin(
+                    context.request.url,
+                    context.soup.select_one(".featured-image img")["src"],
+                ),
+                "url": context.request.url,
+                "tags": [
+                    tag.text.strip() for tag in context.soup.select(".categories a")
+                ],
+                "published_at": dt.isoformat(),
+                "lang": "en",
+            }
+        )
 
     await crawler.run(
         [
