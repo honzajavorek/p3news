@@ -1,5 +1,5 @@
-from datetime import date, datetime
-from operator import itemgetter
+from datetime import UTC, datetime
+from operator import attrgetter
 from pathlib import Path
 import time
 from typing import cast
@@ -8,11 +8,22 @@ from zoneinfo import ZoneInfo
 import click
 from bs4 import BeautifulSoup, Tag
 from feedgen.feed import FeedGenerator
+import feedparser
 import httpx
 from mastodon import Mastodon
 from diskcache import Cache
+from pydantic import BaseModel
 from slugify import slugify
 import stamina
+
+
+class Article(BaseModel):
+    title: str
+    lead: str
+    image_url: str | None = None
+    url: str
+    tags: list[str]
+    published_at: datetime
 
 
 @click.command()
@@ -63,8 +74,8 @@ def main(
     click.echo("Initializing file system")
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    click.echo("Fetching news")
-    articles = []
+    click.echo("Fetching P3 news")
+    articles: list[Article] = []
     for n in range(1, pages + 1):
         url = url_template.format(n=n)
         if response := cache.get(url):
@@ -76,16 +87,42 @@ def main(
             cache.set(url, response, expire=60 * 60)
         click.echo("Parsing news page")
         articles.extend(parse_page(response, today))
-    articles.sort(key=itemgetter("published_at"), reverse=True)
+
+    # TODO refactor
+    nt_feed_url = "https://www.nova-trojka.cz/index.php/feed/"
+    if response := cache.get(nt_feed_url):
+        click.echo("Using cached response for NT news")
+        response = cast(httpx.Response, response)
+    else:
+        click.echo("Fetching NT news feed")
+        response = download(nt_feed_url, user_agent)
+    feed = feedparser.parse(response.content)
+    for entry in feed.entries:
+        content = entry.content[0]["value"]
+        content_soup = BeautifulSoup(content, "html.parser")
+        first_paragraph = content_soup.select_one("p").get_text(" ", strip=True)
+        articles.append(
+            Article(
+                title=entry.title,
+                lead=first_paragraph,
+                url=entry.link,
+                tags=["Nová Trojka", "rodina"],
+                published_at=datetime(*entry.published_parsed[:6], tzinfo=UTC),
+            )
+        )
+
+    click.echo(f"Sorting {len(articles)} articles")
+    articles.sort(key=attrgetter("published_at"), reverse=True)
 
     click.echo("Fetching images")
     for article in articles:
-        if response := cache.get(article["image_url"]):
-            click.echo(f"Using cached response for {article['image_url']}")
-        else:
-            click.echo(f"Fetching image {article['image_url']}")
-            response = download(article["image_url"], user_agent, wait)
-            cache.set(article["image_url"], response, expire=60 * 60 * 24 * 30)
+        if article.image_url:
+            if response := cache.get(article.image_url):
+                click.echo(f"Using cached response for {article.image_url}")
+            else:
+                click.echo(f"Fetching image {article.image_url}")
+                response = download(article.image_url, user_agent, wait)
+                cache.set(article.image_url, response, expire=60 * 60 * 24 * 30)
 
     click.echo("Generating feed")
     feed = FeedGenerator()
@@ -96,20 +133,19 @@ def main(
     feed.language("cs")
     for article in articles:
         entry = feed.add_entry()
-        entry.id(article["url"])
-        entry.title(article["title"])
-        entry.link(href=article["url"])
-        entry.description(article["lead"])
-        entry.published(article["published_at"])
-        image_response = cast(httpx.Response, cache.get(article["image_url"]))
-        entry.enclosure(
-            article["image_url"],
-            image_response.headers["Content-Length"],
-            image_response.headers["Content-Type"],
-        )
-        entry.category(
-            [{"label": tag, "term": slugify(tag)} for tag in article["tags"]]
-        )
+        entry.id(article.url)
+        entry.title(article.title)
+        entry.link(href=article.url)
+        entry.description(article.lead)
+        entry.published(article.published_at)
+        if article.image_url:
+            image_response = cast(httpx.Response, cache.get(article.image_url))
+            entry.enclosure(
+                article.image_url,
+                image_response.headers["Content-Length"],
+                image_response.headers["Content-Type"],
+            )
+        entry.category([{"label": tag, "term": slugify(tag)} for tag in article.tags])
 
     click.echo(f"Writing feed to {output_path}")
     Path(output_path).write_bytes(feed.atom_str())
@@ -135,25 +171,29 @@ def main(
 
     click.echo("Posting articles")
     articles = sorted(
-        [article for article in articles if article["url"] not in posted_urls],
-        key=itemgetter("published_at"),
+        [article for article in articles if article.url not in posted_urls],
+        key=attrgetter("published_at"),
     )
     for i, article in enumerate(articles):
         if i >= limit:
             break
-        image_response = cast(httpx.Response, cache.get(article["image_url"]))
-        media = client.media_post(
-            image_response.content, image_response.headers["Content-Type"]
-        )
-        tags = ["#" + slugify(tag, separator="") for tag in article["tags"]]
-        text = f"{article['title']} — {article['url']}\n\n{' '.join(tags)} #praha3 #zizkov #zpravy"
+        if article.image_url:
+            image_response = cast(httpx.Response, cache.get(article.image_url))
+            media = client.media_post(
+                image_response.content, image_response.headers["Content-Type"]
+            )
+            media_ids = [media["id"]]
+        else:
+            media_ids = []
+        tags = ["#" + slugify(tag, separator="") for tag in article.tags]
+        text = f"{article.title} — {article.url}\n\n{' '.join(tags)} #praha3 #zizkov #zpravy"
         client.status_post(
-            text, language="cs", visibility="public", media_ids=[media["id"]]
+            text, language="cs", visibility="public", media_ids=media_ids
         )
 
 
 @stamina.retry(on=httpx.HTTPError, attempts=3)
-def download(url: str, user_agent: str, wait: float | None) -> httpx.Response:
+def download(url: str, user_agent: str, wait: float | None = None) -> httpx.Response:
     if wait:
         time.sleep(wait)
     response = httpx.get(
@@ -169,9 +209,7 @@ def download(url: str, user_agent: str, wait: float | None) -> httpx.Response:
     return response
 
 
-def parse_page(
-    response: httpx.Response, today: datetime
-) -> list[dict[str, str | date | list[str]]]:
+def parse_page(response: httpx.Response, today: datetime) -> list[Article]:
     base_url = str(response.url)
     soup = BeautifulSoup(response.content, "html.parser")
     return [
@@ -179,9 +217,7 @@ def parse_page(
     ]
 
 
-def parse_article(
-    item: Tag, base_url: str, today: datetime
-) -> dict[str, str | date | list[str]]:
+def parse_article(item: Tag, base_url: str, today: datetime) -> Article:
     dt_text = item.select_one(".date").text.strip()
     if dt_text.lower() == "dnes":
         dt = today
@@ -192,11 +228,11 @@ def parse_article(
     img = item.select_one(".item-image img")
     img_url = img.get("data-lazyload", img.get("src"))
 
-    return {
-        "title": item.select_one(".item-text h3").text.strip(),
-        "lead": item.select_one(".item-text p").text.strip(),
-        "image_url": urljoin(base_url, img_url),
-        "url": urljoin(base_url, item.select_one(".item-link").get("href")),
-        "tags": [tag.text for tag in item.select(".item-tags .tag")],
-        "published_at": dt,
-    }
+    return Article(
+        title=item.select_one(".item-text h3").text.strip(),
+        lead=item.select_one(".item-text p").text.strip(),
+        image_url=urljoin(base_url, img_url),
+        url=urljoin(base_url, item.select_one(".item-link").get("href")),
+        tags=[tag.text for tag in item.select(".item-tags .tag")],
+        published_at=dt,
+    )
