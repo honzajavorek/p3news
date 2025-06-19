@@ -164,3 +164,4 @@ cython_debug/
 # Scraping
 site/
 feed.xml
+storage/
