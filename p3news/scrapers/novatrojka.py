@@ -25,11 +25,17 @@ async def main() -> None:
                 ).isoformat(),
                 "lang": "cs",
             }
-            await context.add_requests([Request.from_url(str(entry.link), label="article", user_data=data)])
+            await context.add_requests(
+                [
+                    Request.from_url(
+                        str(entry.link), label="article", user_data={"data": data}
+                    )
+                ]
+            )
 
     @crawler.router.handler("article")
     async def article_handler(context: HttpCrawlingContext) -> None:
-        data = dict(context.request.user_data)
+        data = dict(context.request.user_data["data"])
         soup = BeautifulSoup(context.http_response.read(), "html.parser")
         data["image_url"] = soup.select_one('meta[property="og:image"]')["content"]
         await context.push_data(data)
