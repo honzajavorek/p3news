@@ -1,12 +1,15 @@
 from datetime import datetime
-from pprint import pp
+import logging
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 from crawlee.crawlers import BeautifulSoupCrawler, BeautifulSoupCrawlingContext
 
 
-async def main() -> None:
-    crawler = BeautifulSoupCrawler()
+logger = logging.getLogger(__name__)
+
+
+async def main() -> list[dict]:
+    crawler = BeautifulSoupCrawler(configure_logging=False)
 
     @crawler.router.default_handler
     async def default_handler(context: BeautifulSoupCrawlingContext) -> None:
@@ -44,7 +47,8 @@ async def main() -> None:
         ]
     )
     data = await crawler.get_data()
-    pp(data.items)
+    logger.info(f"Scraped {len(data.items)} items")
+    return data.items
 
 
 if __name__ == "__main__":

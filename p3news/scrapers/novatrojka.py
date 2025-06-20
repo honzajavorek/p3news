@@ -1,13 +1,16 @@
 from datetime import UTC, datetime
-from pprint import pp
+import logging
 from bs4 import BeautifulSoup
 from crawlee import Request
 from crawlee.crawlers import HttpCrawler, HttpCrawlingContext
 import feedparser
 
 
-async def main() -> None:
-    crawler = HttpCrawler()
+logger = logging.getLogger(__name__)
+
+
+async def main() -> list[dict]:
+    crawler = HttpCrawler(configure_logging=False)
 
     @crawler.router.default_handler
     async def default_handler(context: HttpCrawlingContext) -> None:
@@ -42,7 +45,8 @@ async def main() -> None:
 
     await crawler.run(["https://www.nova-trojka.cz/index.php/feed/"])
     data = await crawler.get_data()
-    pp(data.items)
+    logger.info(f"Scraped {len(data.items)} items")
+    return data.items
 
 
 if __name__ == "__main__":

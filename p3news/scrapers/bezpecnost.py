@@ -1,16 +1,21 @@
 from datetime import date, timedelta
 import json
-from pprint import pp
+import logging
 from bs4 import BeautifulSoup
 from crawlee import Request
 from crawlee.crawlers import HttpCrawler, HttpCrawlingContext
 
 
-async def main(date_from: date | None = None, date_to: date | None = None) -> None:
+logger = logging.getLogger(__name__)
+
+
+async def main(
+    date_from: date | None = None, date_to: date | None = None
+) -> list[dict]:
     date_from = date_from or (date.today() - timedelta(days=30))
     date_to = date_to or (date.today() + timedelta(days=5))
 
-    crawler = HttpCrawler()
+    crawler = HttpCrawler(configure_logging=False)
 
     @crawler.router.default_handler
     async def default_handler(context: HttpCrawlingContext) -> None:
@@ -43,7 +48,8 @@ async def main(date_from: date | None = None, date_to: date | None = None) -> No
         [Request.from_url(url, headers={"Accept": "application/json, text/plain, */*"})]
     )
     data = await crawler.get_data()
-    pp(data.items)
+    logger.info(f"Scraped {len(data.items)} items")
+    return data.items
 
 
 if __name__ == "__main__":

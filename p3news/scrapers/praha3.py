@@ -1,14 +1,17 @@
 from datetime import datetime
-from pprint import pp
+import logging
 from zoneinfo import ZoneInfo
 from crawlee import Request
 from crawlee.crawlers import BeautifulSoupCrawler, BeautifulSoupCrawlingContext
 from crawlee.http_clients import HttpxHttpClient
 
 
-async def main(pages: int = 5) -> None:
+logger = logging.getLogger(__name__)
+
+
+async def main(pages: int = 5) -> list[dict]:
     http_client = HttpxHttpClient(verify=False)  # crawlee bug?
-    crawler = BeautifulSoupCrawler(http_client=http_client)
+    crawler = BeautifulSoupCrawler(configure_logging=False, http_client=http_client)
 
     @crawler.router.default_handler
     async def default_handler(context: BeautifulSoupCrawlingContext) -> None:
@@ -54,7 +57,8 @@ async def main(pages: int = 5) -> None:
         ]
     )
     data = await crawler.get_data()
-    pp(data.items)
+    logger.info(f"Scraped {len(data.items)} items")
+    return data.items
 
 
 if __name__ == "__main__":
