@@ -3,7 +3,6 @@ import json
 from pprint import pp
 import re
 from zoneinfo import ZoneInfo
-from bs4 import BeautifulSoup
 from crawlee import Request
 from crawlee.crawlers import HttpCrawler, HttpCrawlingContext
 
