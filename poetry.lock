@@ -515,14 +515,14 @@ files = [
 
 [[package]]
 name = "crawlee"
-version = "0.6.11"
+version = "0.6.12"
 description = "Crawlee for Python"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "crawlee-0.6.11-py3-none-any.whl", hash = "sha256:899ae74f891ad87c7c0fc9ae6f448be7f1163f54cda5ec4b9b2e080a0758f6c2"},
-    {file = "crawlee-0.6.11.tar.gz", hash = "sha256:746c59b726cce728d7d703e9d2e737ed5f9b2ea8409d3c5b4de0d728af7c0249"},
+    {file = "crawlee-0.6.12-py3-none-any.whl", hash = "sha256:4969ee0139550153187c3a31e70ba45cfd708aca007cbc21e43b39b9b50e74d3"},
+    {file = "crawlee-0.6.12.tar.gz", hash = "sha256:ab1785c1b3f71ebe3af84abe0a74b9e1de0f6516c9fac94a9a0f2df1efcb1387"},
 ]
 
 [package.dependencies]
@@ -1932,4 +1932,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "a54a920f4860becca66fb80024fa113becd172df30250dfb616277b39f50d51e"
+content-hash = "eff728b2c138f8a38e553fe0b92de3f309f2dd4bc226d054b6276acdc198af51"
