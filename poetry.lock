@@ -48,14 +48,14 @@ files = [
 
 [[package]]
 name = "beautifulsoup4"
-version = "4.13.4"
+version = "4.13.5"
 description = "Screen-scraping library"
 optional = false
 python-versions = ">=3.7.0"
 groups = ["main"]
 files = [
-    {file = "beautifulsoup4-4.13.4-py3-none-any.whl", hash = "sha256:9bbbb14bfde9d79f38b8cd5f8c7c85f4b8f2523190ebed90e950a8dea4cb1c4b"},
-    {file = "beautifulsoup4-4.13.4.tar.gz", hash = "sha256:dbb3c4e1ceae6aefebdaf2423247260cd062430a410e38c66f2baa50a8437195"},
+    {file = "beautifulsoup4-4.13.5-py3-none-any.whl", hash = "sha256:642085eaa22233aceadff9c69651bc51e8bf3f874fb6d7104ece2beb24b47c4a"},
+    {file = "beautifulsoup4-4.13.5.tar.gz", hash = "sha256:5e70131382930e7c3de33450a2f54a63d5e4b19386eab43a5b34d594268f3695"},
 ]
 
 [package.dependencies]
@@ -908,14 +908,14 @@ source = ["Cython (>=3.0.11,<3.1.0)"]
 
 [[package]]
 name = "mastodon-py"
-version = "2.1.0"
+version = "2.1.2"
 description = "Python wrapper for the Mastodon API"
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "mastodon_py-2.1.0-py3-none-any.whl", hash = "sha256:96d0e17f2c00fcc3d688b40812174af86c1f3a352bc584fc22e41b3e859a7ef9"},
-    {file = "mastodon_py-2.1.0.tar.gz", hash = "sha256:ddab1cfd3e1d07e84dbca11cfde6c16128cccce8d8c69401cfc3def4265396cc"},
+    {file = "mastodon_py-2.1.2-py3-none-any.whl", hash = "sha256:c1caa16e5eec22c3f4aba25131d7c8ad7954607d976271b0a0a81797f79834b1"},
+    {file = "mastodon_py-2.1.2.tar.gz", hash = "sha256:e06cdcc937fa5ac704ac3b107a2e5fe49a0ee26bf46d30015fa1774bdd1e0c0c"},
 ]
 
 [package.dependencies]
@@ -1933,4 +1933,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "aacf42fd27921131e5159b6c87e5390aa7027f6649a7dc1980260e02e6dbc0e4"
+content-hash = "0eac8e6ef17c802dcfff84af2244aa5a952a7fde8d3e9a3689bf745df3cc8f2e"
