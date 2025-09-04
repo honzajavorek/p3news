@@ -1,29 +1,53 @@
-[tool.poetry]
+[project]
 name = "p3news"
 version = "0.1.0"
-description = "Honza Javorek's personal F1 news feed"
-authors = ["Honza Javorek <mail@honzajavorek.cz>"]
-license = "AGPL-3.0-only"
+description = "Prague 3 news aggregator"
 readme = "README.md"
+authors = [{name = "Honza Javorek", email = "mail@honzajavorek.cz"}]
+license = {text = "AGPL-3.0-only"}
+requires-python = ">=3.13"
+dependencies = [
+    "click>=8.2.1",
+    "httpx>=0.28.1",
+    "beautifulsoup4>=4.13.5",
+    "feedgen>=1.0.0",
+    "mastodon-py>=2.1.2",
+    "diskcache>=5.6.3",
+    "python-slugify>=8.0.4",
+    "stamina>=25.1.0",
+    "pydantic>=2.11.7",
+    "feedparser>=6.0.11",
+    "crawlee>=0.6.12",
+    "jinja2>=3.1.6",
+]
 
-[tool.poetry.scripts]
+[project.urls]
+repository = "https://github.com/honzajavorek/p3news"
+
+[project.scripts]
 p3news = "p3news.__main__:main"
 
-[tool.poetry.dependencies]
-python = "^3.12"
-click = "^8.2.1"
-httpx = "^0.28.1"
-beautifulsoup4 = "^4.13.5"
-feedgen = "^1.0.0"
-mastodon-py = "^2.1.2"
-diskcache = "^5.6.3"
-python-slugify = "^8.0.4"
-stamina = "^25.1.0"
-pydantic = "^2.11.7"
-feedparser = "^6.0.11"
-crawlee = "^0.6.12"
-jinja2 = "^3.1.6"
+[dependency-groups]
+dev = [
+    # "pytest-ruff>=0.4.1",
+    # "pytest>=7.2.1",
+    # "ruff>=0.8.4",
+]
+
+# [tool.pytest.ini_options]
+# pythonpath = ["."]
+# testpaths = "tests"
+# norecursedirs = "env venv .git"
+# addopts = "--ff --ruff --ruff-format --cov=fiobank --cov-report=term-missing:skip-covered --cov-context=test"
+# filterwarnings = ["ignore:Using float for money can cause inaccuracies:DeprecationWarning"]
+
+# [tool.ruff.lint]
+# extend-select = ["I", "UP"]
+
+# [tool.ruff.lint.isort]
+# combine-as-imports = true
+# lines-after-imports = 2
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.8.11,<0.9.0"]
+build-backend = "uv_build"

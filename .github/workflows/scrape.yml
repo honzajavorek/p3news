@@ -26,28 +26,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Install Poetry
-        run: pipx install poetry
+      - uses: astral-sh/setup-uv@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
-          cache: poetry
-
-      - name: Install dependencies
-        run: poetry install
-
-    #   - name: Tests
-    #     run: poetry run pytest
-
-    #   - name: Code
-    #     run: poetry run ruff check
+      - name: Install
+        run: uv sync
 
       - name: Run P3news
         env:
           MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
-        run: poetry run p3news -o site/p3news.xml
+        run: uv run p3news -o site/p3news.xml
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
