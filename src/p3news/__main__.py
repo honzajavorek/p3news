@@ -111,6 +111,30 @@ def main(
             )
         )
 
+    # TODO refactor
+    zd_feed_url = "https://zdopravy.cz/feed/"
+    if response := cache.get(zd_feed_url):
+        click.echo("Using cached response for Zdopravy.cz news")
+        response = cast(httpx.Response, response)
+    else:
+        click.echo("Fetching Zdopravy.cz news feed")
+        response = download(zd_feed_url, user_agent)
+    feed = feedparser.parse(response.content)
+    for entry in feed.entries:
+        tags = [tag.term for tag in entry.tags if tag not in ["seznam"]]
+        if "Praha 3" not in tags:
+            continue
+        # image_url = entry.enclosures[0].href
+        articles.append(
+            Article(
+                title=entry.title,
+                lead=entry.summary.strip(),
+                url=entry.link,
+                tags=tags,
+                published_at=datetime(*entry.published_parsed[:6], tzinfo=UTC),
+            )
+        )
+
     click.echo(f"Sorting {len(articles)} articles")
     articles.sort(key=attrgetter("published_at"), reverse=True)
 
@@ -123,6 +147,10 @@ def main(
                 click.echo(f"Fetching image {article.image_url}")
                 response = download(article.image_url, user_agent, wait)
                 cache.set(article.image_url, response, expire=60 * 60 * 24 * 30)
+
+    from pprint import pp
+
+    pp(articles)
 
     click.echo("Generating feed")
     feed = FeedGenerator()
