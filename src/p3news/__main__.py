@@ -148,10 +148,6 @@ def main(
                 response = download(article.image_url, user_agent, wait)
                 cache.set(article.image_url, response, expire=60 * 60 * 24 * 30)
 
-    from pprint import pp
-
-    pp(articles)
-
     click.echo("Generating feed")
     feed = FeedGenerator()
     feed.id(feed_id)
