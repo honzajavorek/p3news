@@ -5,7 +5,7 @@ description = "Prague 3 news aggregator"
 readme = "README.md"
 authors = [{name = "Honza Javorek", email = "mail@honzajavorek.cz"}]
 license = {text = "AGPL-3.0-only"}
-requires-python = ">=3.13"
+requires-python = ">=3.13,<=3.14"  # because of PyO3
 dependencies = [
     "click",
     "httpx",
