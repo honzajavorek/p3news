@@ -28,9 +28,6 @@ jobs:
 
       - uses: astral-sh/setup-uv@v6
 
-      - name: Install
-        run: uv sync
-
       - name: Run P3news
         env:
           MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
