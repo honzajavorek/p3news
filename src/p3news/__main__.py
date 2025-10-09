@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from io import BytesIO
 from operator import attrgetter
 from pathlib import Path
 import time
@@ -201,14 +202,15 @@ def main(
     for i, article in enumerate(articles):
         if i >= limit:
             break
+        media_ids = []
         if article.image_url:
             image_response = cast(httpx.Response, cache.get(article.image_url))
-            media = client.media_post(
-                image_response.content, image_response.headers["Content-Type"]
-            )
-            media_ids = [media["id"]]
-        else:
-            media_ids = []
+            content_type = image_response.headers["Content-Type"]
+            content_type_type, content_type_subtype = content_type.split("/", 1)
+            assert content_type_type == "image"
+            if content_type_subtype != "svg+xml":
+                media = client.media_post(BytesIO(image_response.content), content_type)
+                media_ids.append(media["id"])
         tags = ["#" + slugify(tag, separator="") for tag in article.tags]
         text = f"{article.title} — {article.url}\n\n{' '.join(tags)} #praha3 #zizkov #zpravy"
         client.status_post(
