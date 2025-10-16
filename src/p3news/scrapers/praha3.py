@@ -63,5 +63,6 @@ async def main(pages: int = 5) -> list[dict]:
 
 if __name__ == "__main__":
     import asyncio
+    from pprint import pp
 
-    asyncio.run(main())
+    pp(asyncio.run(main()))

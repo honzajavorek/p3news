@@ -20,12 +20,9 @@ async def main(
 
     @crawler.router.default_handler
     async def default_handler(context: HttpCrawlingContext) -> None:
-        api_token = re.search(
-            r'"mrApiToken":"([^"]+)"', context.http_response.read().decode()
-        ).group(1)
-        csrf_token = re.search(
-            r'"csrfToken":"([^"]+)"', context.http_response.read().decode()
-        ).group(1)
+        html = (await context.http_response.read()).decode()
+        api_token = re.search(r'"mrApiToken":"([^"]+)"', html).group(1)
+        csrf_token = re.search(r'"csrfToken":"([^"]+)"', html).group(1)
         headers = {
             "Authorization": f"Bearer {api_token}",
             "Accept": "application/json",
@@ -60,7 +57,7 @@ async def main(
 
     @crawler.router.handler("api")
     async def api_handler(context: HttpCrawlingContext) -> None:
-        data = json.loads(context.http_response.read())
+        data = json.loads(await context.http_response.read())
         for article in data["data"]:
             dt = datetime.fromisoformat(article["publishAt"]).replace(tzinfo=ZoneInfo("Europe/Prague")).isoformat()
             if lead := article["description"].strip():
@@ -89,5 +86,6 @@ async def main(
 
 if __name__ == "__main__":
     import asyncio
+    from pprint import pp
 
-    asyncio.run(main())
+    pp(asyncio.run(main()))

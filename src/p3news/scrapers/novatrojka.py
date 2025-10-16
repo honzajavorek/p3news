@@ -18,9 +18,10 @@ async def main() -> list[dict]:
         for entry in feed.entries:
             content = entry.content[0]["value"]
             content_soup = BeautifulSoup(content, "html.parser")
+            first_paragraph = content_soup.select_one("p").get_text(" ", strip=True)
             data = {
                 "title": str(entry.title),
-                "lead": content_soup.select_one("p").get_text(" ", strip=True),
+                "lead": first_paragraph,
                 "url": str(entry.link),
                 "tags": ["Nová Trojka", "rodina"],
                 "published_at": datetime(
@@ -39,7 +40,7 @@ async def main() -> list[dict]:
     @crawler.router.handler("article")
     async def article_handler(context: HttpCrawlingContext) -> None:
         data = dict(context.request.user_data["data"])
-        soup = BeautifulSoup(context.http_response.read(), "html.parser")
+        soup = BeautifulSoup(await context.http_response.read(), "html.parser")
         data["image_url"] = soup.select_one('meta[property="og:image"]')["content"]
         await context.push_data(data)
 
@@ -51,5 +52,6 @@ async def main() -> list[dict]:
 
 if __name__ == "__main__":
     import asyncio
+    from pprint import pp
 
-    asyncio.run(main())
+    pp(asyncio.run(main()))
