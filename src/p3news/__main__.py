@@ -90,27 +90,28 @@ def main(
         articles.extend(parse_page(response, today))
 
     # TODO refactor
-    nt_feed_url = "https://www.nova-trojka.cz/index.php/feed/"
-    if response := cache.get(nt_feed_url):
-        click.echo("Using cached response for NT news")
-        response = cast(httpx.Response, response)
-    else:
-        click.echo("Fetching NT news feed")
-        response = download(nt_feed_url, user_agent)
-    feed = feedparser.parse(response.content)
-    for entry in feed.entries:
-        content = entry.content[0]["value"]
-        content_soup = BeautifulSoup(content, "html.parser")
-        first_paragraph = content_soup.select_one("p").get_text(" ", strip=True)
-        articles.append(
-            Article(
-                title=entry.title,
-                lead=first_paragraph,
-                url=entry.link,
-                tags=["Nová Trojka", "rodina"],
-                published_at=datetime(*entry.published_parsed[:6], tzinfo=UTC),
-            )
-        )
+    # TODO it's buggy, repeats over time
+    # nt_feed_url = "https://www.nova-trojka.cz/index.php/feed/"
+    # if response := cache.get(nt_feed_url):
+    #     click.echo("Using cached response for NT news")
+    #     response = cast(httpx.Response, response)
+    # else:
+    #     click.echo("Fetching NT news feed")
+    #     response = download(nt_feed_url, user_agent)
+    # feed = feedparser.parse(response.content)
+    # for entry in feed.entries:
+    #     content = entry.content[0]["value"]
+    #     content_soup = BeautifulSoup(content, "html.parser")
+    #     first_paragraph = content_soup.select_one("p").get_text(" ", strip=True)
+    #     articles.append(
+    #         Article(
+    #             title=entry.title,
+    #             lead=first_paragraph,
+    #             url=entry.link,
+    #             tags=["Nová Trojka", "rodina"],
+    #             published_at=datetime(*entry.published_parsed[:6], tzinfo=UTC),
+    #         )
+    #     )
 
     # TODO refactor
     zd_feed_url = "https://zdopravy.cz/feed/"
